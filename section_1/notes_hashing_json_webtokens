@@ -1,0 +1,613 @@
+___________________________________________________
+2. Intro to Node Authentication
+___________________________________________________
+Authentication with node and express 
+
+A lot is very similar to flask and python 
+
+We are going to be seeing a different strategy of approaching Authentication
+
+eventually we will be writing react applications
+
+we are living in the backend developer world 
+
+this is all going to be JSON based, this is important for React front end and Node backends 
+
+we are going to be building all of these endpoints 
+
+1. Hash passwords with Bcrypt 
+2. Using JSON web tokens for API Authentication (What it is, why its different)
+3. Use middleware to simplify route security 
+
+Most of the information in this section will carry over to a lot of the rest of the code we will do 
+we will be relying on ecisting tools 
+
+Overview of our starting app, pretty barebones , one thing we havent seen is that some of the logic from the db has been moved into a file called config.js 
+
+we have our 1 route and I have insomnia to check if its working and it is 
+
+we have 1 table in our database, users 
+
+we are going to be writing routes to create a user, get a password, login, logout etc 
+___________________________________________________
+3. Node BCrypt
+___________________________________________________
+
+just like we did with flask we are going to be using Bcrypt to hash our password 
+
+there is a bcrypt package for node 
+
+the method names are different but the method of use is the same 
+
+we go into node so we can check out bcrypt 
+
+section_1 git:master ❯ node                                                                                         ⏎ ✭
+Welcome to Node.js v12.18.3.
+Type ".help" for more information.
+> const bcrypt = require('bcrypt')
+undefined
+> bcrypt
+{
+  genSaltSync: [Function: genSaltSync],
+  genSalt: [Function: genSalt],
+  hashSync: [Function: hashSync],
+  hash: [Function: hash],
+  compareSync: [Function: compareSync],
+  compare: [Function: compare],
+  getRounds: [Function: getRounds]
+}
+
+the two methods that we will be using are 
+
+hash, which expects some password and work factor, which is how many rounds will be hashed
+
+and so if we use bcrypt.hash(password,rounds)
+
+we get back a promise, which in javascript is something we have to deal with 
+
+we will be using an async function and await it 
+
+> bcrypt.hash('monkeybrains',12).then(d=> console.log(d))
+Promise { <pending> }
+> $2b$12$rRkSDu1IuojV6YCCxuixre2qfgszgtCUu7CIxUH1kl7qYKdIogQbi
+
+we can use the .then on the promise to make sure we see something once the password is done. 
+
+we can go more rounds to have it take more time so we can see it 
+
+the other method we are going to want to use is 
+
+bcrypt.compare (password, hashed_password)
+
+> bcrypt.hash('Hello1',12).then(result => console.log(result))
+Promise { <pending> }
+> $2b$12$400nT0y5/e5RiIKsZNY/wegJuyxzl4VBt.Ij6HbsYTCnYbMvTrSQ6
+> let pw = '$2b$12$400nT0y5/e5RiIKsZNY/wegJuyxzl4VBt.Ij6HbsYTCnYbMvTrSQ6'
+undefined
+> bcrypt.compare(pw,'Hello1')
+Promise { <pending> }
+> bcrypt.compare(pw,'Hello1').then(result=>console.log(result))
+Promise { <pending> }
+> false
+> bcrypt.compare('Hello1',pw).then(result=>console.log(result))
+Promise { <pending> }
+> true
+___________________________________________________
+4. Register Route
+___________________________________________________
+those were the basic bcrypt methods we are going to use 
+
+lets define a register route 
+
+we are setting up a basic route and we can hard code 12 rounds into our bcrypt.hash method but colt configures it in the config file 
+
+its nice to put all of the configuration in a single file and then we just export it and require it where we need it because we can update it and then it updates all of our routes if we use it multiple times 
+
+in flask, when we did this kind of thing we returned a user id because we were storing the user id in the session to determine if a user was currently logged in or not. shortly we will be introducing JWTs json web tokens 
+
+
+our current registration code is pretty straightforward 
+
+router.post('/register', async (req, res, next) => {
+  try {
+    const { username, password } = req.body
+    if (!username || !password) {
+      throw new ExpressError("UIsername and password required", 400)
+    }
+    // hash password 
+    const hashedPassword = await bcrypt.hash(password, BCRYPT_WORK_FACTOR)
+    // save to db
+    results = await db.query(`INSERT INTO users (username,password) VALUES ($1,$2) RETURNING username`, [username, hashedPassword]);
+
+    return res.json(results.rows[0])
+
+
+  } catch (e) {
+    return next(e)
+  }
+})
+
+we are handling the case where we dont have a password or username
+
+but right now we are getting an error from postgres which is being thrown by pg 
+
+{
+  "error": {
+    "message": "duplicate key value violates unique constraint \"users_pkey\"",
+    "status": 500
+  }
+}
+
+if we use a console.log(e) in our catch(e)
+
+  length: 199,
+  severity: 'ERROR',
+  code: '23505',
+  detail: 'Key (username)=(StevieChicks21) already exists.',
+  hint: undefined,
+  position: undefined,
+  internalPosition: undefined,
+  internalQuery: undefined,
+  where: undefined,
+  schema: 'public',
+  table: 'users',
+  column: undefined,
+  dataType: undefined,
+  constraint: 'users_pkey',
+  file: 'nbtinsert.c',
+  line: '563',
+  routine: '_bt_check_unique'
+
+the important part here is the code, the postgres code 
+
+23505 is a unique constraint code 
+
+there is a table of all the different codes from postgresql docs 
+
+the only thing we have a unique constraint on is username 
+
+we can modify our catch to be able to handle that specific error 
+
+catch (e) {
+    if (e.code === '23505') {
+      return next(new ExpressError("Username taken. Please pick another!", 400))
+    }
+    // console.log(e)
+    return next(e)
+  }
+
+so now we are checking if we are getting back that specific code which indicates that a unique field is being reused so we can give specific feedback for that 
+
+{
+  "error": {
+    "message": "Username taken. Please pick another!",
+    "status": 400
+  }
+}
+
+this is what we get back when we check with insomnia which is the desired functionality 
+
+but if we had some other error or other constraints from postgres then we can use the codes available, what type of error was that what was the pg code and now we can give specific feedback 
+
+note that we also determine whether the username and password is missing first before we give feedback that a username is taken 
+
+really kind of am easy way to do that. i dont remember exactly why but error handling in SQL alchemy was a bit of a pain 
+
+___________________________________________________
+5. Login Route
+___________________________________________________
+now we have a register and a couple of users, now we can use the login route
+
+for now we can just use a basic login and once we cover JSON webtokens we can cover that too. 
+
+gotta try to find a user first
+if it exists compare hashed password to has of login password
+
+bcrypt.comapre() if it resolves to true then we login them in , else we throw an error 
+
+so now we can fake a login and we are checking a username and hashed password to see what is happening. 
+
+we have a lot of error handling now but we usually wouldnt want to give feedback that a username was correct and a password was invalid
+
+next we are going to introduct JWT's
+___________________________________________________
+6. JWT Intro
+___________________________________________________
+JSON Web tokens provide us with a way to authenticate: Different from Flask sessions
+
+everything we have done so far has kind of been a rehashing of what we did in Flask 
+
+even if the method names have changed slightly, everything is for the most part the same. this is pretty standard stuff so no reason to change between node and python 
+
+we are going to change stuff around authorization, keeping track of who is logged in, essentially adding state to a stateless protocol 
+
+JSON Web Tokens aka JWT aka 'Jots'
+
+recap of flask Authentication
+1. a user makes a request with usernmae/password to login route
+2. Server authenticates & puts user info in session
+-session is encoded and signed with Flask-specific scheme
+3.Session info is sent back to browser in cookie 
+4. Session info is automatically resent with every request via cookie 
+
+this is a pretty standard approach, being able to persist logged in states 
+
+What if:
+-we didnt want to send auth info with certain requests?
+-we wanted to share authentication info across multiple APIs/hostnames 
+
+let's say we have a react frontend, node backend 
+if we were cloning zillow 
+
+might have one api for sellers, one for buyers, all kinds of stuff 
+
+you might have multiple apis and it would be best if we could register and sign in for the zillow api, and it would be great if we could use that for the zillow api. 
+
+Something like google (they use a different strat something called Oauth but the principle is the same)
+
+if we make a google account we can still visit drive and photos and gmail and we dont have to sign in again and these are different apps and servers. no its not JWTs but the idea is similar. 
+
+in flask only that one flask app could receive that information and make sense of a given token. 
+
+you still have to authenticate somewhere but its a very different strategy, its not up to only one server or one application anymore 
+
+think of something like in a hotel where your card key can get you into your room, elevator, the gym in the hotel etc.
+
+instead of storing stuff in cookies we will be generating json webtokens, this makes it a lot easier in single page apps. 
+
+___________________________________________________
+7. JWT Anatomy
+___________________________________________________
+So we did a recap of Flask 
+
+now lets talk about jots 
+
+so we register and verify a user, but what do we do next?
+
+1. Make a request with username/password to AJAX login route
+2. server authenticates and returns token in JSON 
+- Token is encoded and signed with open standard, "JSON Web Token"
+3. Front-end Javascript receives token & stores (in var or localStorage)
+4. For every future request, browser sends token in request
+-Server gets token from requet and validates the token 
+
+so it might seem it is not too different from what we have already done. 
+so the first part is the same but where it differs is that in Flask we get back a cookie and that 1 flask server can make sense of that cookie 
+but we have to store and send that JWT data if we want to 
+we can write logic to validate a token on multiple applications 
+
+its like we can write a secret code to check if we are able to use multiple apps 
+
+so what do JWTs actually look like?
+
+There are lots of different implementations and they are in several languages. we could do this with python even!
+
+There are 3 sections to any given token:
+
+1. Header 
+-Metadata about token (signing algorithm) 
+    algorithm and type (we have a library that does this for us)
+2. Payload
+-Data to be stored in token (typically an object)
+things like user id 
+last login
+it can hav arbitrary data in there 
+"iat" issues at this kind of thing is generally written for us
+
+The header and the payload are going to be expressed in base 64 which is just a way to get the data that we are sending in the first two sections and makes it into a single string for each section 
+
+
+
+3. Signature
+version of header and payload cryptographically signed with the hashing algo we specifed in the header. the point of signing something is to be able to verify its origins or verify the identity of the sender.
+
+the digital signature is the result of taking the header, taking the encoded payload. combining them together, hashing them together , and assuming that nothing has changed. (remember 1 way hashing)  it should always be the same result 
+
+the signature does not have any thing we really want besides the payload. 
+
+the way we verify that we are getting back our specific payload from our signature we have our own secret that is added in 
+only our servers/our apps know 
+stays on the server side you would never upload it to github or anything 
+
+
+
+___________________________________________________
+8. Node JWT Package
+___________________________________________________
+
+So there are lots of libraries and implementations of different web tokens 
+
+npm install jsonwebtoken
+
+> const jwt = require('jsonwebtoken')
+undefined
+> jwt
+{
+  decode: [Function],
+  verify: [Function],
+  sign: [Function],
+  JsonWebTokenError: [Function: JsonWebTokenError],
+  NotBeforeError: [Function: NotBeforeError],
+  TokenExpiredError: [Function: TokenExpiredError]
+}
+
+this is the object that we get back from our json web token npm package 
+
+the first method we are going to look at is 
+
+sign
+
+this allows us to generate a new token 
+
+this is how we would actually create a token to whoever is registering that we need to send a token to 
+
+and we will give it some kind of payload
+then we give it a secret key 
+
+there are options but we will use the default for the most part/ 
+
+> const myToken = jwt.sign({username:"Todd"}, 'asdflkjhasdklfjhasdf')
+undefined
+> myToken
+'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VybmFtZSI6IlRvZGQiLCJpYXQiOjE2MDcwMzkzMDF9.anun9JS8k5qo1Wvz95LJq8Fi6z1Kh0jL8j85qgjfcNc'
+
+this is an express app , we logged in , we generated the token and we got this back 
+
+if we plug it into the jwt.io docs decoder thing it reads us back the header and payload
+
+nothing in the payload is secret
+
+you can use things like username that is public facing data. 
+
+if you paste in the secret key that we set then it will tell us that the signature is verified but we are not going to be displaying th secret key anywhere
+
+so going back to myToken 
+
+let's say we are looking for user details or we need some authentication for some kind of route
+
+and now we need to check if its real , if it really came from our servers 
+
+> const reqToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VybmFtZSI6IlRvZGQiLCJpYXQiOjE2MDcwMzkzMDF9.anun9JS8k5qo1Wvz95LJq8Fi6z1Kh0jL8j85qgjfcNc'
+undefined
+> jwt.verify(reqToken,'alsdhfkjasdf')
+Uncaught JsonWebTokenError: invalid signature
+
+so we use the verify method and that allows us to verify that the request came from our servers as long as we have the correct secret Key
+> jwt.verify(reqToken,'asdflkjhasdklfjhasdf')
+{ username: 'Todd', iat: 1607039301 }
+
+and we get back the data from the payload 
+
+
+if we use decode method 
+
+it will just tell us what the method is but it wont verify anything, we get the same result but it doesnt care about the actual verification
+
+someone could fake it and a signature allows us to verify that the payload hasnt been tampered with. 
+> jwt.decode(reqToken)
+{ username: 'Todd', iat: 1607039301 }
+
+
+so thoser are the crucial methods
+___________________________________________________
+9. Express login in JWT
+___________________________________________________
+how do we actually integrate jots into our application?
+
+its basically taking the place of session that we had in flask so lets update our route, did the hashed password pass our checking the database. so now lets update so that we also generate a token when we verify that the password is correct
+
+need to require jwt at the top
+
+if (await bcrypt.compare(password, user.password)) {
+        // so with sign we set our payload as the first variable, in this case we only have a username table to keep track of, and secondly we will use our Secret_key which we set in our config file
+        const token = jwt.sign({ username }, SECRET_KEY)
+        // now that we are creating our token we can also respond with it 
+        res.json({ message: `Logged In`, token })
+      }
+
+so with this we are generation our token now once we verify that the password and username are correct
+
+protected routes
+
+we sent back a signed token and it came from our server using our secret key 
+it is signed and we have not yet verified it though 
+
+now that the client receives the token , they should send every future request that needs authentication 
+
+for our demo we will look in the req.body for a token called _token 
+
+all that matters is the token value
+
+we just need some name for a variable with how someone should send a token 
+
+if we use the .verify method without the token we will get back the standard jwt error
+
+{
+  "error": {
+    "message": "jwt must be provided",
+    "status": 500
+  }
+}
+
+thats just a default error but we can send a different one with our expressError handler 
+
+catch (e) {
+    return next(new ExpressError("Please login first", 401))
+  }
+  in our router logic we have that and now we get back this response
+
+{
+  "error": {
+    "message": "Please login first",
+    "status": 401
+  }
+}
+
+and now when we send the correct _token
+{
+	"_token":"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VybmFtZSI6InRhbW15IiwiaWF0IjoxNjA3MDQwOTEyfQ.HFOUerdSRKRIqg2Y-AKE8m5mAftpkxe1wJpBuFwsKTE"
+}
+
+
+
+
+{
+  "message": "Signed in! This is top secret. I like purple"
+}
+
+we get back our signed in message and now it is being signed in and verified.
+
+now if we wanted we could have another api and we could include this token with our requests and we could verify that it came from one of our other services or servers. 
+
+
+
+___________________________________________________
+10. Authotrization MiddleWare
+___________________________________________________
+so now it all works but we can refactor.
+it is pretty common that we will want to authenticate a token and verify it 
+
+it is not going to authenticate or reject a user 
+
+we can use some middleware, check for a token, try to verify it 
+then we just add the payload we get back onto the request itself 
+
+so we add it onto the property, in our case we are going to be adding it to req.user
+
+and every route in our route handler will have access to the payload, and if there is soemthing in req.user then that means that the verification of the token was successful 
+
+we are not returning next of error in our token because jwt throws its own error, so we want to just return next() with no error in our catch 
+
+now we want to make a middleware file where we can handle the logic that we will need. 
+
+const jwt = require("jsonwebtoken");
+const { SECRET_KEY } = require("../config");
+const ExpressError = require("../expressError");
+
+
+function authenticateJWT(req, res, next) {
+  try {
+    //  so if it is able to verify then we get the payload data, and if it doesn't verify then it throws an error and we catch that and move on
+    const payload = jwt.verify(req.body._token, SECRET_KEY)
+    req.user = payload;
+    return next()
+  } catch (e) {
+    return next();
+  }
+}
+
+module.exports = { authenticateJWT }
+
+here is our middleware logic and we are exporting it so that we can require the use of it on every route
+just like we did for express.json 
+
+placement of our middleware does matter 
+
+
+app.use(express.json());
+app.use(authenticateJWT)
+app.use("/", routes);
+
+so we want to have the authenticateJWT before the routes middleware
+
+any request that we have, we should see we have a valid token printed out 
+
+[nodemon] starting `node server.js`
+Server starting on port 3000
+You have a valid token here
+You have a valid token here
+Error: Not found!
+
+we put in a console.log that says'you have a valid token here' when it is able to verify the token successfully on a route , we got back an error because it was a post request and we just used a GET request to a random route but the token was still being verified successfully 
+
+where it really becomes useful is when we are able to authorize and give a user access to certain abilities inside of our app 
+
+now lets have another middleware to ensure that a user is logged in 
+
+function ensureLoggedIn(req, res, next) {
+  if (!req.user) {
+    const e = new ExpressError("Unauthorized", 404)
+    return next(e)
+  } else {
+    
+    return next()
+  }
+}
+
+at this point we aren't using this anywhere but if we wanted to have a route that you must be logged in to access then we might want to selectively use this .
+
+we wouldnt do it on all of the routes because then you would be unable to login and register etc. 
+
+so we have to import the middle ware make sure we export it from our middleware file 
+
+NOTE: 
+when we covered middleware we went over that we could use the middle ware after the path in a route
+
+router.get('/topsecret', ensureLoggedIn, async (req, res, next) => {
+
+so like that we can set our specific routes to have that middleware run 
+
+alright now we have that working and we can do another route that is locked behind a login 
+
+{
+  "msg": "Welcome to my VIp section, tammy"
+}
+
+router.get('/private', ensureLoggedIn, (req, res, next) => {
+  return res.json({ msg: `Welcome to my VIP section, ${req.user.username}` })
+})
+
+we can also write middleware that can check if a user is a mod or soemthing 
+
+thanks to JWT we can store whatever payload we want when we are storing our token 
+like in the payload we could do something like isAdmin:true 
+usually you would do something on the databASe
+
+we set up our admin route and we have an older token so right now we can't go to admin home because we don't have the boolean in the req.user that specifies us as an admin 
+
+{
+  "error": {
+    "message": "Must be an admin to go here!",
+    "status": 401
+  }
+}
+because our token doesn't contain admin 
+
+let's reregister
+ and see if we can access the admin section now since we are making any new users admins 
+
+so the flow we have now is 
+
+1. Register
+-puts us in the database with our username and password
+2. Login
+-verifies that we have the right username and password combo and gives us back our token that we can use
+3. Verify token
+-this happens at each route where we have ensureLoggedIn or ensureAdmin 
+4. Gives us access
+{
+  "msg": "Admin Dashboard! Welcome!, Bojack"
+}
+
+
+___________________________________________________
+11. Testing Authotrization
+___________________________________________________
+
+The logic is basically the same for testing except for a few things 
+
+notably when we want to check a token Colt is using 
+
+expect.objectContaining({token:expect.any(String)})
+
+because all we care about is the token that we get back 
+
+which is a way of saying, I want the response body to equal something that has this one property, it can have other stuff but I only care about that one token 
+
+checking the protected routes 
+
+should have a status code of 401 if we have a wrong token for Unauthorized
+
+there are tons of ways to write different tests, missing passwords, filling out the wrong username and password 
+
+take a look at the test file from the downloaded code 
