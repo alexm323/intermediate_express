@@ -1,0 +1,418 @@
+______________________________________________
+Validating JSON APIs
+______________________________________________
+
+Understand how and why to validate APIs
+Validate our JSON apis using jsonschema
+
+Data validation with schemas, when we get to react we will be sending a whole bunch of json api requests and having a fairly complex react front end. Lots of data and validating that data and not only that it is there but also that it is in the correct format is important. 
+
+Checking that a year is a valid format 
+time is a valid format 
+
+A server lacking adequate validation can result in corrupt or incomplete data 
+
+crashing or locking up the servers
+displays unhelpful errors to the front end/ API users
+
+we want to write code that is strict and explicit about what went wrong 
+instead of SQL error you get something like 'date is invalid format' 
+
+JSON Schema is a tool we will be using 
+
+THere are three main reasons for using a schema validation syste, 
+
+1. User data can fail fast, before bad data gets to your db
+2. To reduce the amount of code for processing and validating data
+3. To get a validation system that is easy to setup and maintain as our app evolves
+
+
+In the /book example 
+
+We have a very weak form of validation which is basically checking that we have a book object and we arent checking if all the properties actually exist or how they are actually formatted 
+
+this is where JSON schema comes into effect 
+
+
+if you want title and author to be required fileds
+what if users send invalid amazon urls or ISBNs 
+
+it would be a lot of work to check all of these things out , what if we had differnt end points for different pieces of information 
+
+we are not going to write a bunch of conditional statements , instead we have a tool we can use. 
+
+______________________________________________
+JSON Schema Basics
+______________________________________________
+
+We don't want malformed or missing data
+we also want to be able to respond with better errors 
+
+JSON schema is a standard spec for describing JSON ina  human and machine-readable format
+
+There is an understanding JSON schema e-book that looks kind of interesting that is supposed to be reader friendly to understand how to 'drive the car' that is JSON schema 
+
+what does one look like?
+
+well one schema for an address (which are written in JSON) looks like below:
+
+{
+"type":"object",
+"properties":{
+    "street_address":{"type":"string"},
+    "city": {"type":"string"},
+    "state":{"type":"string"}
+},
+"required":["street_address","city","state"]
+
+}
+
+what we are going to do is define a schema like this one and download an npm package that validates the req.body 
+
+you can also reference different schemas inside of another one like if someone had a business card and that business card had an address, you can reference the address schema for the address portion of that business card and same thing for emails and names and anything really
+
+
+______________________________________________
+JSON Schema package node 
+______________________________________________
+
+npm install jsonschema
+
+we will first be using this in a node console and then we can throw it into express in the next video 
+
+from the npm docs we can just require it and then use a method called validate on it where we would plug in our schema 
+
+section_2 git:main ❯ node                                                                                           ✹ ✭
+Welcome to Node.js v12.18.3.
+Type ".help" for more information.
+> const jsonschema = require('jsonschema')
+undefined
+> jsonschema
+{
+  Validator: [Function: Validator],
+  ValidatorResult: [Function: ValidatorResult],
+  ValidatorResultError: [Function: ValidatorResultError],
+  ValidationError: [Function: ValidationError],
+  SchemaError: [Function: SchemaError],
+  SchemaScanResult: [Function: SchemaScanResult],
+  scan: [Function: scan],
+  validate: [Function]
+}
+
+> jsonschema.validate("hello",{"type":"string"})
+ValidatorResult {
+  instance: 'hello',
+  schema: { type: 'string' },
+  options: {},
+  path: [],
+  propertyPath: 'instance',
+  errors: [],
+  throwError: undefined,
+  throwFirst: undefined,
+  throwAll: undefined,
+  disableFormat: false
+}
+
+
+> jsonschema.validate("hello",{"type":"string"}).valid
+true
+
+so we can see that it accepts two arguments at a glance, the first is the item to validate and the second is the schema
+validate returns either true or false depending on whether or not it is properly validated 
+
+> jsonschema.validate(123,{"type":"string"}).valid
+false
+
+there is an errors proprty
+
+> jsonschema.validate(123,{"type":"string"})
+ValidatorResult {
+  instance: 123,
+  schema: { type: 'string' },
+  options: {},
+  path: [],
+  propertyPath: 'instance',
+  errors: [
+    ValidationError {
+      path: [],
+      property: 'instance',
+      message: 'is not of a type(s) string',
+      schema: [Object],
+      instance: 123,
+      name: 'type',
+      argument: [Array],
+      stack: 'instance is not of a type(s) string'
+    }
+  ],
+  throwError: undefined,
+  throwFirst: undefined,
+  throwAll: undefined,
+  disableFormat: false
+}
+
+and we can see the specific reasons that something failed 
+
+we can have more complex schemas too 
+
+thats kind of the basic mechanic 
+
+pass in the json schema and the data to be validated 
+
+in express we will take request.body and check the data to see if it is valid or not,
+if its valid continue with our code and if its not then we can see or display the errors that we get back 
+
+______________________________________________
+Auto generating Schema
+______________________________________________
+We can go to JSONschema.net 
+
+and that helps us by inferring a schema from the pattern that we put into place 
+
+in our case we are using this 
+
+{
+    "book": {
+        "isbn": "0691161518",
+        "amazon-url": "http://a.co/eobPtX2",
+        "author": "Matthew Lane",
+        "language": "english",
+        "pages": 264,
+        "publisher": "Princeton University Press",
+        "title": "Power-Up: Unlocking Hidden Math in Video Games",
+        "year": 2017
+    }
+}
+
+and then the schema it spits back at us is this 
+
+{
+    "$schema": "http://json-schema.org/draft-07/schema",
+    "$id": "http://example.com/example.json",
+    "type": "object",
+    "title": "The root schema",
+    "description": "The root schema comprises the entire JSON document.",
+    "default": {},
+    "examples": [
+        {
+            "book": {
+                "isbn": "0691161518",
+                "amazon-url": "http://a.co/eobPtX2",
+                "author": "Matthew Lane",
+                "language": "english",
+                "pages": 264,
+                "publisher": "Princeton University Press",
+                "title": "Power-Up: Unlocking Hidden Math in Video Games",
+                "year": 2017
+            }
+        }
+    ],
+    "required": [
+        "book"
+    ],
+    "properties": {
+        "book": {
+            "$id": "#/properties/book",
+            "type": "object",
+            "title": "The book schema",
+            "description": "An explanation about the purpose of this instance.",
+            "default": {},
+            "examples": [
+                {
+                    "isbn": "0691161518",
+                    "amazon-url": "http://a.co/eobPtX2",
+                    "author": "Matthew Lane",
+                    "language": "english",
+                    "pages": 264,
+                    "publisher": "Princeton University Press",
+                    "title": "Power-Up: Unlocking Hidden Math in Video Games",
+                    "year": 2017
+                }
+            ],
+            "required": [
+                "isbn",
+                "amazon-url",
+                "author",
+                "language",
+                "pages",
+                "publisher",
+                "title",
+                "year"
+            ],
+            "properties": {
+                "isbn": {
+                    "$id": "#/properties/book/properties/isbn",
+                    "type": "string",
+                    "title": "The isbn schema",
+                    "description": "An explanation about the purpose of this instance.",
+                    "default": "",
+                    "examples": [
+                        "0691161518"
+                    ]
+                },
+                "amazon-url": {
+                    "$id": "#/properties/book/properties/amazon-url",
+                    "type": "string",
+                    "title": "The amazon-url schema",
+                    "description": "An explanation about the purpose of this instance.",
+                    "default": "",
+                    "examples": [
+                        "http://a.co/eobPtX2"
+                    ]
+                },
+                "author": {
+                    "$id": "#/properties/book/properties/author",
+                    "type": "string",
+                    "title": "The author schema",
+                    "description": "An explanation about the purpose of this instance.",
+                    "default": "",
+                    "examples": [
+                        "Matthew Lane"
+                    ]
+                },
+                "language": {
+                    "$id": "#/properties/book/properties/language",
+                    "type": "string",
+                    "title": "The language schema",
+                    "description": "An explanation about the purpose of this instance.",
+                    "default": "",
+                    "examples": [
+                        "english"
+                    ]
+                },
+                "pages": {
+                    "$id": "#/properties/book/properties/pages",
+                    "type": "integer",
+                    "title": "The pages schema",
+                    "description": "An explanation about the purpose of this instance.",
+                    "default": 0,
+                    "examples": [
+                        264
+                    ]
+                },
+                "publisher": {
+                    "$id": "#/properties/book/properties/publisher",
+                    "type": "string",
+                    "title": "The publisher schema",
+                    "description": "An explanation about the purpose of this instance.",
+                    "default": "",
+                    "examples": [
+                        "Princeton University Press"
+                    ]
+                },
+                "title": {
+                    "$id": "#/properties/book/properties/title",
+                    "type": "string",
+                    "title": "The title schema",
+                    "description": "An explanation about the purpose of this instance.",
+                    "default": "",
+                    "examples": [
+                        "Power-Up: Unlocking Hidden Math in Video Games"
+                    ]
+                },
+                "year": {
+                    "$id": "#/properties/book/properties/year",
+                    "type": "integer",
+                    "title": "The year schema",
+                    "description": "An explanation about the purpose of this instance.",
+                    "default": 0,
+                    "examples": [
+                        2017
+                    ]
+                }
+            },
+            "additionalProperties": true
+        }
+    },
+    "additionalProperties": true
+}
+
+we can change the properties that we have on there 
+
+we are going to make new schemas so it is fairly conventional to make a folder to put the schema
+
+so now we have our schema and this is a good starting point for us 
+
+we can add new properties, change if certain properties are required or not etc 
+
+
+______________________________________________
+JSONSchema with express
+______________________________________________
+
+now lets integrate this together 
+
+in order to use it we need to require the package for json schema as well as the schema that we got from our online tool 
+
+const jsonschema = require("jsonschema");
+const bookSchema = require("../schemas/bookSchema.json")
+
+router.post('/', async (req, res, next) => {
+  // just like we practiced with the node console we have two arguments, the data and the schema
+  const result = jsonschema.validate(req.body, bookSchema);
+  // the result we get back is an object , look below for an example fo the type of object we get back and what it contains 
+  if (!result.valid) {
+    return res.json('That is invalid!')
+  }
+
+  return res.json("That is valid!!")
+})
+
+
+this is our route logic and its working and now we can just give more specific errors with the errors property on our result 
+
+so lets put in all the errors from the resulting object 
+
+{
+  "error": {
+    "message": [
+      "instance.book requires property \"publisher\"",
+      "instance.book requires property \"title\""
+    ],
+    "status": 400
+  }
+}
+
+this is what the error looks like when we get it back 
+
+our logic gets updated of course
+
+router.post('/', async (req, res, next) => {
+  // just like we practiced with the node console we have two arguments, the data and the schema
+  const result = jsonschema.validate(req.body, bookSchema);
+  // the result we get back is an object , look below for an example fo the type of object we get back and what it contains 
+  if (!result.valid) {
+    // the most useful thing to us is the errors stack so we want to map that to a new array and send that back as our message in a new Express Error 
+
+    const listOfErrors = result.errors.map(e => e.stack)
+    const err = new ExpressError(listOfErrors, 400);
+
+    return next(err)
+  }
+
+  return res.json("That is valid!!")
+})
+
+
+______________________________________________
+More JSON Schema properties
+______________________________________________
+
+So we have a basic schema and are using it 
+
+relatively straight forward and all we have specified is a type 
+
+there are other things we can do 
+
+if we wanted to add in an email there is a property called format that allows us to specify a certain type of pre defined format and then it will check if its an email 
+
+we can also specify things with regex 
+
+that would be something like a north american phone number 
+
+things to be aware of:
+dont overvalidate
+if you update database , check if you need to update the schema 
+you may want different schemas for updating and creating 
+
+Another JSON Validator is another tool we can use that has a package out there called AJV errors and that will help us customize error messages 
+

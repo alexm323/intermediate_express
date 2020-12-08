@@ -611,3 +611,4 @@ should have a status code of 401 if we have a wrong token for Unauthorized
 there are tons of ways to write different tests, missing passwords, filling out the wrong username and password 
 
 take a look at the test file from the downloaded code 
+
