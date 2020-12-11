@@ -1,0 +1,84 @@
+___________________________________________
+Good Testing Practices
+___________________________________________
+
+New tools and best Practices
+
+Visit some essential concepts with Testing
+
+mocking understanding what that is 
+
+examine end to end tests with cypress 
+
+good testing Practices
+1. Make sure you write tests
+2. Don't get too attached to coverage percentages(test all of the important stuff and change tests as the application changes)
+3. Make sure in your readme you specify how to run the tests!(Make sure you have a readme in the first place)
+- in your package.json, there is a key that we can add called scripts, and we can add our custom scripts that run in npm, so we could add test and then we could just use 'npm run test' if we added that word test.
+-we could also write our own commands in the scripts we could say npm run lol and have that start our server or something 
+-idea being that we want to make it easy for someone to be able to run the tests. 
+
+___________________________________________
+Test APIs not Databases
+___________________________________________
+Instead of teting the database, test your api 
+
+A better way to test would be something like if you are going to be creating a cat with something like 
+
+POST /cats have it return {cat:cat_details}
+
+then you would write the regular tests for that to make sure it was created and youre getting a response
+
+and THEN you would make another request to another api route to GET /cats 
+to see if it returns the correct cat object
+
+test your api when you can not your database. 
+
+___________________________________________
+Test Driven Development
+___________________________________________
+
+TDD is an approach that some teams take when developing an application 
+
+its a practice, when you are creating an app and writing tests 
+
+Write tests first - they will fail , this makes you think about how the application works 
+
+only write the code necessary to get the tests to pass (bare minimum)
+
+As you write more code, keep running tests and make sure they keep running 
+
+Red,Green, Refactor 
+
+Your tests fail (red)
+You write the code to get the tests to pass (green)
+You refactor! 
+
+it is a very specific approach to creating an app and working on projects. 
+
+not everyone is going to practice at tdd 
+
+how should this feature work 
+how should this one function work 
+
+
+add a test , run the test , make a little change, run the tests , when it passes continue. 
+
+write tests first, making them fail 
+
+it really helps you understand and think about your code before you jump 
+
+by keeping things testable it makes it easier to keep things refactorable and easier to maintain. 
+
+it slows development down upfront, but it saves you time in the longrun because you might keep bugs from happening. 
+
+time is a bit of a tradeoff. it depends on how well you write good tests 
+it takes a while to really get the idea. 
+takes a while to get the testing going. 
+
+when you work on a project on your own it could slow you down but it will save time
+in the industry you might have to do it anyways 
+
+write tests first
+make them pass with the minimum amount of code possible 
+
