@@ -253,3 +253,53 @@ ___________________________________________
 End to end testing with cypress
 ___________________________________________
 
+There are ways to simulate a script for testing an applications flow 
+
+testing the user experience. How we simulate clicks and dragging stuff like that
+
+testing this can be very useful because you can do stuff from the user perspective . 
+
+you dont even need to know how to code to write automated ui tests 
+
+E2E testing can be a nightmare to maintain because it can depend a lot on the CSS and HTML stuff so changes can break the whole thing
+
+E2E testing take a long time and shouldnt be used as part of the tdd process at least not in the beginning 
+
+Cypress is one tool
+Selenium is another one 
+
+Cypress docs are great and really easy and the tool is very powerful 
+
+it can visit a webpage, it can look for certain things
+it can find buttons or h1's or it can find anything really. 
+
+we will be using be using a meme generator to test it
+
+if we want to run it we are going to write in the script into the package.json like he mentioned in an earlier video 
+
+{
+  "name": "cypress-meme-generator",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "cypress:open": "cypress open"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "cypress": "^3.2.0"
+  }
+}
+
+
+so now we can run that 
+
+i had some error with xvfb
+
+this is pretty crazy it opens a ui and you can see the ui being typed in real time and you can see everything happening
+thats pretty cool ! 
+
+
+
