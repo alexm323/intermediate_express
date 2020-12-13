@@ -125,3 +125,131 @@ we will be testing a function called rollDice(numSides
 )
 
 something like dice can be hard to simulate because it is random so mocks can help us with this 
+
+in order to make it work with the element of randomness 
+
+we can mock Math.random() 
+
+whatever the number happens to be, it doesnt matter to us because we want to test OUR logic not math.random 
+        Math.random = jest.fn(() => 0.5)
+        console.log(Math.random())
+        console.log(Math.random())
+        console.log(Math.random())
+  console.log
+    0.5
+
+      at Object.<anonymous> (dice.test.js:6:17)
+
+  console.log
+    0.5
+
+      at Object.<anonymous> (dice.test.js:7:17)
+
+  console.log
+    0.5
+
+now we can see that when we run jest we are getting back 0.5 every time, so we didnt have to change our code and we are able to force the random access to be predictable letting us test our functionality. 
+
+we can see all the methods that get added on by jest 
+
+  console.log
+    [Function: mockConstructor] {
+      _isMockFunction: true,
+      getMockImplementation: [Function],
+      mock: [Getter/Setter],
+      mockClear: [Function],
+      mockReset: [Function],
+      mockRestore: [Function],
+      mockReturnValueOnce: [Function],
+      mockResolvedValueOnce: [Function],
+      mockRejectedValueOnce: [Function],
+      mockReturnValue: [Function],
+      mockResolvedValue: [Function],
+      mockRejectedValue: [Function],
+      mockImplementationOnce: [Function],
+      mockImplementation: [Function],
+      mockReturnThis: [Function],
+      mockName: [Function],
+      getMockName: [Function]
+    }
+
+const rollDice = require("./dice");
+
+describe("#rollDice", function () {
+    test("it rolls the correct amount of dice", function () {
+        Math.random = jest.fn(() => 0.5)
+
+        expect(rollDice(6)).toEqual(3);
+        expect(rollDice(2)).toEqual(1);
+    })
+})
+
+and so now we get back passing tests
+
+Test Suites: 1 passed, 1 total
+Tests:       1 passed, 1 total
+Snapshots:   0 total
+Time:        1.152 s
+Ran all test suites.
+
+we can also check if our function is being called at all 
+
+expect(Math.random).toHaveBennCalled();
+
+What kinds of things can you mock?
+
+AJAX requests
+reading writing to files
+impure functions like Math.random
+
+
+___________________________________________
+travis CI
+___________________________________________
+Continuous integration 
+
+very important tool in the industry 
+
+the idea behind it is constantly merging in small code changes frequently 
+
+you need to be able to have your tests run and pass for each small change. 
+
+Lets us develop continously
+
+Automate running your tests when pushing your code 
+
+reject deployments if your tests do not pass
+
+easily notify you when chagnes to your test suite occur 
+
+VCS is version control system such as git 
+
+you push up your code 
+
+the CI server is going to run tests on the new code 
+
+if they succeed it makes it to the build and then deploys 
+
+it integrates with tools like github and carrieso out a series of tasks 
+
+if the tasks fail the build is considered broken 
+
+travis ci - travis is a lot easier to get up and running with but you have to pay
+jenkins - free to use but required a bit of start up
+circle ci 
+buddy 
+
+theres a ton like any tool 
+
+some of them integrate into github and other ones require a lot of set up
+
+cycle is the same
+
+psuh code
+pass or fail test
+deploy or reject 
+
+___________________________________________
+End to end testing with cypress
+___________________________________________
+
