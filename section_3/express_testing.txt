@@ -82,3 +82,46 @@ in the industry you might have to do it anyways
 write tests first
 make them pass with the minimum amount of code possible 
 
+___________________________________________
+Mocks
+___________________________________________
+Common testing concept called mocking 
+
+core idea is pretty standard 
+
+-Mocking is primarily used in unit testing
+- An object under test may have dependencies on other objects 
+-to isolate the behavior ou repolace other objects by mocks that simulate their behavior
+
+
+so we make a fake function or dummy function to try to get the same functionality that we are expecting back 
+
+advantages, 
+
+it can be faster 
+we could make a mock for something like pokemon so we dont have to make a request everytime we run our test
+we dont have to wait for api resposnes or deal with rate limits 
+
+it makes your tets pure, whether they pass or fail depends on on your code not on some external thing . 
+
+our application will still run on it but still 
+
+challenges
+-can be convoluted to setup
+-can be over optimizing 
+
+
+can check the docs for mocks in jest 
+
+the core method that we will rely on is
+
+jest.fn 
+
+this lets us write a function and then jest adds in some methods 
+
+it can tell us all kinds of things like how many times was a function called 
+we will be testing a function called rollDice(numSides
+
+)
+
+something like dice can be hard to simulate because it is random so mocks can help us with this 
