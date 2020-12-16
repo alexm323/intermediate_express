@@ -1,0 +1,515 @@
+________________________________________
+2. Templating Languages
+________________________________________
+we are about to transition into react content.
+there are a ton of things that we didnt get to cover 
+
+a lot of these things are specific to express. 
+
+the reason that we learned express was because the point is to be able to create a backend api that lets us create apps 
+
+nunjucks is a very similar jinja templating thing 
+
+we install and require it and in order to use it we have to point out to nunjucks where we are going to be using our templates
+
+
+nunjucks.configure('views', {
+    autoescape: true,
+    express: app
+})
+
+and we also specify which express app to use 
+so we should be able to make a template now 
+
+we set up our index.html and instead of res.send ing something we are going to use res.render 
+
+app.get("/", (req, res, next) => {
+    res.render("index.html");
+});
+app.get("/dogs/:name", (req, res, next) => {
+    res.render("dog.html", { name: req.params.name });
+});
+
+
+we can render with and without variables
+
+there is an additional thing we can do so that we dont have to write index.html and we can use just index or instead of dog.html we can do dog 
+
+app.set("view engine", "html")
+
+that allows us to just refactor a tiny bit to
+
+app.get("/", (req, res, next) => {
+    res.render("index");
+});
+app.get("/dogs/:name", (req, res, next) => {
+    res.render("dog", { name: req.params.name });
+});
+
+there are tons of templating options 
+
+for example there is pug which uses a very succint version of html that isnt really valid outside of it
+
+________________________________________
+3. Express Static Files
+________________________________________
+How do we serve static files?
+
+we need to tell express which folders 
+
+in order to use it we can create a new folder to have our static files 
+
+we name our folder public and then we have a css file called app.css 
+
+
+app.use(express.static("public"));
+
+we can go here 
+
+http://localhost:3000/app.css
+
+and we can see that our file is being served
+
+h1 {
+    color: crimson;
+}
+
+body{
+    background-color: lavender;
+}
+
+we link it in our html and then we have access to it
+
+when we link everything that is in public folder which we specified is being served so to link to it we dont need to give the path we just use the name of the style sheet we want 
+
+<link rel="stylesheet" href="app.css">
+
+
+app.use('/js', express.static("js"));
+
+
+http://localhost:3000/js/app.js
+
+by writing the app.use like that we are telling it to server are files with /js/ in front of it 
+
+________________________________________
+4. Helmet JS
+________________________________________
+
+3 packages for express
+
+Helmet is a very common tool and it is a collection of middleware
+
+it comes with 13 middleware 
+
+when you tell your app to use it , it uses 7 by default
+
+helmet docs teach you about the docs they are trying to precent 
+
+clickjacking is when they hide an iframe and make you click on something you wouldnt normally click on 
+
+definitely check out helmet for protecting your projects 
+
+
+________________________________________
+5. Passport JS
+________________________________________
+
+authentication/login 
+
+library that kind of acts like an adapter that lets use different authentications strats very easily 
+
+we could use all kinds of things like steam,insta,facebook, etc etc etc 
+
+if we wanted to do facebook login 
+
+passport has a specific library for that, there is a whole process but it is highly popular and something that everyone might want to use 
+
+it has a very active community 
+
+if you rely on passport it takes away from the experience when you are trying to learn about auth and why we do certain things 
+
+
+
+________________________________________
+6. Cookie Parser
+________________________________________
+
+can also sign cookies to make tamper free cookies 
+
+you install you require it and then you app.use it 
+
+and now you can access a cookies property on the request object of a route
+
+app.get('/showmecookies', (req, res, next) => {
+    res.send(req.cookies);
+})
+
+so we do this but we dont get anything if we dont have it installed duh 
+
+npm i cookie-parser
+const cookieParser = require('cookie-parser')
+app.use(cookieParser())
+
+we execute it with app.use
+
+now if we add cookies with the chrome tools under application in the cookie section 
+
+we add color purple 
+we add flavor mintChip 
+
+now when we go to the showmecookies route  we see
+
+
+// 20201214175131
+// http://localhost:3000/showmecookies
+
+{
+  "color": "purple",
+  "flavor": "mintChip"
+}
+
+if we wanted to set a cookie from express we have access to a method called res.cookie('key','value')
+
+that sends it to the browser, the browser sets it and then we can see it on the cookie parser page we set up 
+
+might take a couple of refreshes
+________________________________________
+7. Koa, Hapi, and Sails
+________________________________________
+Other Node Web Frameworks 
+
+Express is by far the most popular framework for Node 
+
+that doesnt mean it will be the only one but there are tons of them 
+
+Koa2 is written by the original author of Node 
+
+Lightest Weight 
+
+Koa
+Express
+Hapi 
+Sails 
+
+Heaviest Weight 
+
+koa is a departure from express and it is very different and very light weight 
+doesnt come with much out of the box its like 500 lines of code 
+
+it is gaining in popularity though 
+
+hapi helps to build larger scalable app 
+
+its not like django that dictates everything 
+
+the goal was originally to scale walmart black friday sale 
+
+gives you some stuff out the box so its a nice middle ground 
+
+Sails is a very heavy weight framework like django and ruby on rails 
+
+includes an ORM called waterline 
+
+tools for authentication 
+
+takes a while to learn but it can slow you down a ton if you dont have the fundamentals now 
+
+check out sails and happy for sure 
+
+works with any database 
+
+like a universal orm 
+
+waterline can work with nosql or sql pattern databases 
+
+it can auto generate backend apis 
+
+installing takes a little while 
+
+THAT THING WAS MASSIVE WITH SO MANY Files
+easy to get lost in it all 
+
+
+
+________________________________________
+8. MomentJS
+________________________________________
+
+we will survey 3 new packages for node 
+
+momentjs gives you a lot of convenient functions to deal with dates and times 
+
+very useful tool for working with dates check out the docs if we need to work with them 
+
+
+________________________________________
+9. Validator JS
+________________________________________
+
+validators.js is a popular library of string validators 
+
+for example something like a phone number
+
+it can be written in so many ways 
+
+we can use this library and if we check the docs we can see all the kinds of stuff that is formatted
+
+npm i validator 
+
+and then we have all of those methods 
+
+we would just use something like 
+
+validator.isMobilePhone('1231239813') and it would tell us either true or false if it is or isnt valid 
+
+
+________________________________________
+10. Lodash
+________________________________________
+has been around quite some time 
+
+collection of really useful methods 
+
+things that arent built into javascript by default 
+
+lodash is still the most popular tool on the developer survey 
+
+there are still a lot of useful methods, even if some of them have now been built into javascript 
+
+he is going over some different methods like keyBy get 
+
+cloneDeep makes a deep copy of an object so that they both point to the same reference 
+
+
+ 
+________________________________________
+11. npm scripts
+________________________________________
+
+in a package.json we can see that we have a test 
+
+section_4 git:main ❯ npm run greet                                                                                  ⏎ ✭
+
+> section_4@1.0.0 greet /mnt/c/Users/alexm/documents/springboard/unit_36/section_4
+> echo 'HELLO'
+
+HELLO
+
+test is a common thing we might want to do , something like jest , we could use it to set the node environment 
+
+we could do something like nodemon app.js and put that in the script as start 
+
+
+
+section_4 git:main ❯ npm run start                                                                                    ✭
+
+> section_4@1.0.0 start /mnt/c/Users/alexm/documents/springboard/unit_36/section_4
+> nodemon -e html,css,js,json app.js
+
+[nodemon] 2.0.6
+[nodemon] to restart at any time, enter `rs`
+[nodemon] watching path(s): *.*
+[nodemon] watching extensions: html,css,js,json
+[nodemon] starting `node app.js`
+Server is running on port 3000
+
+
+"start": "nodemon -e html,css,js,json app.js"
+
+
+________________________________________
+12. MongoDB
+________________________________________
+how and why you might want to use a nosql database 
+there are tons of sql databases 
+
+like postgresql 
+
+there are a ton of databases without sql 
+
+mongodb works quite differently from postgresql 
+
+couchdb is another popular one 
+
+in mongo db you store data as objects not in tables 
+
+useful for unstructured data or recrusive data 
+
+it is harder to enforce integrity 
+
+it is definitely worth exploring some other databases 
+
+you can store non conforming fields , like additional information that the other entries for that collection wouldnt necessarily need 
+
+storing data in objects can be tricky in terms of keeping it efficient but it is actually pretty interesting as a way of looking at a database. many to many are hard, but those are hard for me in sql anyways and right now they can only do left joins but it looks pretty inteersting . overall sql databases are a safe bet and mongodb could be good when used to its strengths 
+
+
+
+________________________________________
+13. Redis
+________________________________________
+another example a of a nosql database 
+
+key/value stores 
+like a simple 2 column table 
+or a dictionary or a key value pair 
+
+can be extremely fast and easy to scale 
+
+postgrsql and most databases store stuff somewhere in a file. 
+
+redis is an in-memory data store 
+
+it is super fast
+
+it not usually used as the onyl database 
+
+the most standard use is for cacheing 
+
+redis makes it incredibly fast to access data that has already been accessed. 
+
+colt showed a demo where he makes a request to the pokemon api and it takes 1 second
+then when he does it again the request is 100 times faster 
+
+twitter uses several clusters of redis to access things very quickly 
+
+twitter goal is to give all followers the notification of a followees tweet within 5 seconds even if thats a million followers. incredibly fast data 
+
+
+
+________________________________________
+14. More Postgres
+________________________________________
+
+concurrency control things that happen when there are queries at the same time 
+
+parallel queries, postgres can use multiple cpus to look up a query if it takes a long time and other stuff
+
+database roles 
+
+there are tons of stuff in postgres that we might never know about 
+
+triggers - kind of like an event listener, when something happens do something else, when something is deleted insert something into my recently deleted database or something 
+
+json_agg it will aggregate data into a json array 
+
+making queries from express it can be really useful 
+
+we have covered the important stuff of postgres
+
+
+
+________________________________________
+15.Websockets
+________________________________________
+web sockets are a completly different protocol from http
+
+weve used it with node express 
+
+websockets is another protocol 
+
+http is a pretty wordy and heavy protocol 
+
+http is stateless 
+-its like a piece of mail, send something, get answer, hang up connection 
+
+web sockets are tiny and stateful-they stay connected 
+-theyre often used to tell the browser something has changed 
+-web sockets is more like a tunnel that leaves a connection open that can let you communicate 
+
+something like uber or door dash
+
+anytime you have a map or real time maps 
+
+things like trello
+
+he moves a trello thing and it updates immediately , this kind of thing couldnt be done easily on http 
+
+we dont have a way to send the data instantaneously to a server somewhere 
+
+pizza tracker from dominoes , it would update back in the day without refreshing the page 
+
+it would send a request every couple of seconds to see if anything would change 
+
+
+with websockets i can send data to a server and the server can send out updates 
+
+websockets are a protocol like http 
+
+time for a demo 
+
+
+initialize a websocket and give it a url NOT an http one a ws one 
+
+when the socket is open we can run some code 
+
+when socket is closed run some code 
+
+library called express-ws makes it super easy to set up websockets via express 
+
+we set up a basic websocket app 
+
+ws
+WebSocket {url: "ws://localhost:3000/counter", readyState: 1, bufferedAmount: 0, onopen: null, onerror: null, …}
+
+we can see this in the console because we named it that in client.js
+
+
+ws.send("testing 123")
+
+we do this in the console and we can immediately see that we are getting something back on the server side 
+
+so now we can see 1 direction
+
+and we can go the other way as well 
+
+
+app.ws('/counter', function (ws, req) {
+    ws.send("Hello from server!")
+    ws.on('message', function (data) {
+        console.log("MSG ON SERVER")
+        console.log(data)
+    })
+})
+
+the ws.send sends a message when it connects from the server 
+
+we are going to now make it so that anyone on localhost can see and increment a counter 
+
+we are seeing that we can increment the counter 
+HOWEVER where it gets really cool is that we can send data to everyone that is connected to this 
+
+currently our logic looks like this 
+
+app.ws('/counter', function (ws, req) {
+    ws.send("Hello from server!")
+    ws.on('message', function (data) {
+        counter++;
+        ws.send(counter)
+        console.log("MSG ON SERVER")
+        console.log(data)
+    })
+})
+
+now if we want to send it to everyone then we will udpate it to look like this 
+
+app.ws('/counter', function (ws, req) {
+    ws.send(counter)
+    ws.on('message', function (data) {
+        counter++;
+        expressWs.getWss().clients.forEach(client => {
+            if (client.readyState === 1) {
+                client.send(counter)
+            }
+        })
+        console.log("MSG ON SERVER")
+        console.log(data)
+    })
+})
+________________________________________
+16. Goodbye Node
+________________________________________
+
+we will continue to use node so its not goodbye we will need it for react 
+
